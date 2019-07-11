@@ -1,0 +1,78 @@
+<launch>
+
+	<arg name="namespace" default="Swarm"/>
+	<arg name="namespace1" default="Gollum"/>
+
+	<!-- - - - - - - - - - - - - - - Mission Planner - - - - - - - - - - - - - -->
+    <group ns="$(arg namespace)">
+
+	    <node pkg="mission_planner" type="vicon_swarm_inspection" name="inspector_node" output="screen">
+
+	    	<!-- Namespaces -->
+			<rosparam param="namespaces" subst_value="true"> [$(arg namespace1)] </rosparam>
+
+			<!-- Vehicle type -->
+			<rosparam param="vehicle_type"> ["rover"] </rosparam>
+
+			<!-- Paths for waypoint files -->
+			<rosparam param="inspection_waypoints_path" subst_value="true"> [$(find mission_planner)/waypoints/wps_bilbo.txt, $(find mission_planner)/waypoints/wps_frodo.txt] </rosparam>
+
+			<!-- Guidance parameters -->
+			<param name="takeoff_height" value="0.75"/> <!-- Takeoff height (in meters) -->
+			<param name="max_velocity" value="0.15"/>   <!-- Maximum speed (in meters/sec) -->
+
+			<!-- Thread update rates (in Hz) -->
+			<param name="tf_update_rate" value="100"/>
+		</node>
+
+    </group>
+
+    <!-- - - - - - - - - - - - - - - Minimum Snap Planners - - - - - - - - - - - - - -->
+
+    <group ns="$(arg namespace1)">
+    	<node pkg="p4_ros" type="p4_services" name="min_acc_node" output="screen"/> 
+    </group>
+
+	<!-- - - - - - Batch solver to find relative pose between vicon and SLAM - - - - - -->
+    <node pkg="batch_pose_estimator" type="batch_solver" name="batch_solver" output="screen">
+
+		<!-- Image topics -->
+		<!-- NOTE: input topics have to be time-synchronized (header/stamp should match) -->
+		<param name="input_pose_topic" value="/local_odom"/>
+		<param name="input_slam_topic" value="/RGBD/CamPoseENUFrame"/>
+
+		<!-- Namespaces of input topics -->
+		<rosparam param="namespaces" subst_value="true"> [$(arg namespace1), $(arg namespace2)] </rosparam>
+
+		<!-- Camera position in body frame (in meters) -->
+		<rosparam param="cam_pos_body_frame"> [0.15, 0.0, 0.0] </rosparam>
+	</node>
+
+    <!-- - - - - - - - - - Triangulation node to find emoji locations - - - - - - - - - - -->
+    <node pkg="yolo_triangulation" type="yolo_triangulation" name="triangulation" output="screen">
+		<!-- Camera parameters -->
+		<param name="fx" value="609.9031982421875"/>
+		<param name="fy" value="609.9591064453125"/>
+		<param name="cx" value="320.2873229980469"/>
+		<param name="cy" value="239.86740112304688"/>
+
+		<!-- Camera position in body frame (in meters) -->
+		<rosparam param="cam_pos_body_frame"> [0.15, 0.0, 0.0] </rosparam>
+
+		<!-- Namespaces of input topics -->
+		<rosparam param="namespaces" subst_value="true"> [$(arg namespace1), $(arg namespace2)] </rosparam>
+
+		<!-- Subscribing topics -->
+		<param name="input_pose_topic" value="/local_odom"/>
+		<param name="input_bounding_boxes_topic" value="/darknet_ros/bounding_boxes"/>
+	</node>
+
+    <!-- <include file="$(find mapper)/launch/mapper_ns.launch">
+		<arg name="namespace" value="$(arg namespace)" />
+	</include> -->
+
+	<!-- <include file="$(find simulations_ros)/launch/localization.launch">  -->
+		<!-- <arg name="namespace" value="$(arg namespace)" /> -->
+	<!-- </include> -->
+
+</launch>
