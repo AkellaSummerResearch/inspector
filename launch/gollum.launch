@@ -34,19 +34,19 @@
     </group>
 
 	<!-- - - - - - Batch solver to find relative pose between vicon and SLAM - - - - - -->
-    <node pkg="batch_pose_estimator" type="batch_solver" name="batch_solver" output="screen">
+    <!--node pkg="batch_pose_estimator" type="batch_solver" name="batch_solver" output="screen"-->
 
 		<!-- Image topics -->
 		<!-- NOTE: input topics have to be time-synchronized (header/stamp should match) -->
-		<param name="input_pose_topic" value="/local_odom"/>
-		<param name="input_slam_topic" value="/RGBD/CamPoseENUFrame"/>
+		<!--param name="input_pose_topic" value="/local_odom"/-->
+		<!--param name="input_slam_topic" value="/RGBD/CamPoseENUFrame"/-->
 
 		<!-- Namespaces of input topics -->
-		<rosparam param="namespaces" subst_value="true"> [$(arg namespace1), $(arg namespace2)] </rosparam>
+		<!--rosparam param="namespaces" subst_value="true"> [$(arg namespace1)] </rosparam-->
 
 		<!-- Camera position in body frame (in meters) -->
-		<rosparam param="cam_pos_body_frame"> [0.15, 0.0, 0.0] </rosparam>
-	</node>
+		<!--rosparam param="cam_pos_body_frame"> [0.15, 0.0, 0.0] </rosparam-->
+	<!--/node-->
 
     <!-- - - - - - - - - - Triangulation node to find emoji locations - - - - - - - - - - -->
     <node pkg="yolo_triangulation" type="yolo_triangulation" name="triangulation" output="screen">
@@ -60,7 +60,7 @@
 		<rosparam param="cam_pos_body_frame"> [0.15, 0.0, 0.0] </rosparam>
 
 		<!-- Namespaces of input topics -->
-		<rosparam param="namespaces" subst_value="true"> [$(arg namespace1), $(arg namespace2)] </rosparam>
+		<rosparam param="namespaces" subst_value="true"> [$(arg namespace1)] </rosparam>
 
 		<!-- Subscribing topics -->
 		<param name="input_pose_topic" value="/local_odom"/>

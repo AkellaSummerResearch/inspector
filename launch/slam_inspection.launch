@@ -27,12 +27,12 @@
     </group>
 
 	<!-- Batch solver to find relative pose between vicon and SLAM -->
-    <include file="$(find batch_pose_estimator)/launch/slam2vicon.launch">
+    <include file="$(find batch_pose_estimator)/launch/slam2slam.launch">
 	    <arg name="namespace" value="$(arg namespace)" />
     </include>
 
     <!-- Triangulation node to find emoji locations -->
-    <include file="$(find yolo_triangulation)/launch/triangulate.launch">
+    <include file="$(find yolo_triangulation)/launch/slam_triangulate.launch">
 	    <arg name="namespace" value="$(arg namespace)" />
     </include>
 

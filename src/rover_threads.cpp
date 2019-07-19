@@ -62,6 +62,7 @@ void RoverMissionClass::MinAccSolverTask(const std::string &ns) {
             this->MinAccPoint2Point(ns, min_acc_input.waypoints_[0], min_acc_input.waypoints_[1], tf, 
                                     &nh, &traj_inputs.polyX, &traj_inputs.polyY);
         } else {
+            ROS_INFO("Calculating Min Acc");
             this->MinAccWaypointSet(ns, min_acc_input, &nh, &traj_inputs.polyX, &traj_inputs.polyY);
         }
 
@@ -93,7 +94,7 @@ void RoverMissionClass::MinAccSolverTask(const std::string &ns) {
 // Consumer thread
 // Consumes smooth trajectories
 void RoverMissionClass::TrajectoryActionCaller(const std::string &ns) {
-    ROS_DEBUG("[mission_node] TrajectoryActionCaller started.");
+    ROS_INFO("[mission_node] TrajectoryActionCaller started.");
 
     ros::NodeHandle nh;
     ros::Rate loop_rate(10); // Runs at 10hz
@@ -117,7 +118,6 @@ void RoverMissionClass::TrajectoryActionCaller(const std::string &ns) {
         mutexes_.trajectory_buffer.lock();
         	traj_inputs = globals_.traj_inputs;
         mutexes_.trajectory_buffer.unlock();
-
         // Get current state of the action server
         actionlib::SimpleClientGoalState status = followPolyPVA_action_client.getState();
         if (status.state_ == status.ACTIVE) {
@@ -125,7 +125,6 @@ void RoverMissionClass::TrajectoryActionCaller(const std::string &ns) {
         } else {
             action_server_busy = false;
         }
-
         // Set global variable of whether server is busy or not
         mutexes_.rover_is_busy.lock();
             globals_.rover_is_busy = action_server_busy;
@@ -147,6 +146,7 @@ void RoverMissionClass::TrajectoryActionCaller(const std::string &ns) {
                                  &nh, &followPolyPVA_action_client);
 
         } else {
+           
             if(!action_server_busy) {
                 mutexes_.rover_is_busy.lock();
                     globals_.rover_is_busy = true;

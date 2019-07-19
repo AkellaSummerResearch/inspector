@@ -59,14 +59,17 @@ tf::StampedTransform RoverMissionClass::GetCurrentPose() {
 
 // Wait until the first pose is obtained
 tf::StampedTransform RoverMissionClass::WaitForFirstPose() {
+
     tf::StampedTransform tf_initial_pose;
     ros::Rate loop_rate(10);
     do {
         loop_rate.sleep();
         mutexes_.tf.lock();
             tf_initial_pose = globals_.tf_rover2world;
+            //ROS_INFO("Waiting for first pose\n");
         mutexes_.tf.unlock();
     } while (tf_initial_pose.stamp_.toSec() <= 0.0);
+    ROS_INFO("Waiting for first pose\n");
     return tf_initial_pose;
 }
 
@@ -75,7 +78,7 @@ bool RoverMissionClass::MinAccPoint2Point(const std::string &ns, const Eigen::Ve
                                           std::vector<mg_msgs::PolyPVA> *polyX, std::vector<mg_msgs::PolyPVA> *polyY) {
 
     // Set service client
-    std::string service_name = "/" + ns + "/minAccSolver";
+    std::string service_name = "/" + ns + "/min_acc_node/minAccSolver";
     ros::ServiceClient client = nh->serviceClient<mg_msgs::minAccXYWpPVA>(service_name);
     mg_msgs::PVA_request Wp0 = helper::get_empty_PVA();
     mg_msgs::PVA_request Wp1 = helper::get_empty_PVA();
@@ -130,7 +133,7 @@ bool RoverMissionClass::MinAccWaypointSet(const std::string &ns, const std::vect
                                           const double &max_vel, const double &max_acc, ros::NodeHandle *nh,
                                           std::vector<mg_msgs::PolyPVA> *polyX, std::vector<mg_msgs::PolyPVA> *polyY) {
     // Set service client
-    std::string service_name = "/" + ns + "/minAccSolver";
+    std::string service_name = "/" + ns + "/min_acc_node/minAccSolver";
     ros::ServiceClient client = nh->serviceClient<mg_msgs::minAccXYWpPVA>(service_name);
     geometry_msgs::Point Pos0, Pos_mid, Pos_final;
     std::vector<mg_msgs::PVA_request> PVA_array;
@@ -191,7 +194,7 @@ bool RoverMissionClass::MinAccWaypointSet(const std::string &ns, const std::vect
     srv.request.max_acc = max_acc;
     srv.request.max_jerk = max_jerk;
     if (client.call(srv)) {
-        // ROS_INFO("Return size: %d", int(srv.response.flatStates.PVAJS_array.size()));
+         //ROS_INFO("Return size: %d", int(srv.response.flatStates.PVAJS_array.size()));
         ROS_INFO("[%s mission_node] Service returned succesfully with waypoint trajectory!", ns_.c_str());
     } else {
         ROS_ERROR("[%s mission_node] Failed to call service ""%s"" for waypoint trajectory...", ns_.c_str(),
@@ -214,6 +217,7 @@ bool RoverMissionClass::MinAccWaypointSet(const std::string &ns, const rover_pla
 void RoverMissionClass::CallActionType(const std::string &ns, const rover_planner::TrajectoryActionInputs &traj_inputs, 
                                        const bool &wait_until_done, ros::NodeHandle *nh,
                                        actionlib::SimpleActionClient<mg_msgs::follow_PolyPVA_XY_trajectoryAction> *client) {
+    
     // If halt, remove all trajectories from list and stop action
     if(traj_inputs.action_type == rover_planner::ActionType::Halt) {
         // Remove all trajectories from list
@@ -246,9 +250,8 @@ bool RoverMissionClass::CallPVAAction(const std::string &ns, const rover_planner
 bool RoverMissionClass::CallPVAAction(const std::string &ns, const rover_planner::TrajectoryActionInputs &traj_inputs,
                                       const bool &wait_until_done, ros::NodeHandle *nh,
                                       actionlib::SimpleActionClient<mg_msgs::follow_PolyPVA_XY_trajectoryAction> *client) {
-
     ros::Duration timeout(2.0);
-    if(!client->waitForServer(timeout)) {
+    if(!client->waitForServer()) {
         ROS_ERROR("[%s mission_node] Failed to call action server for sending trajectory: timeout!", ns_.c_str());
         return false;
     }
