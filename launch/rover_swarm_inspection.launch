@@ -17,7 +17,7 @@
 			<rosparam param="vehicle_type"> ["drone", "drone", "rover"] </rosparam>
 
 			<!-- Paths for waypoint files -->
-			<rosparam param="inspection_waypoints_path" subst_value="true"> [$(find mission_planner)/waypoints/wps_bilbo.txt, $(find mission_planner)/waypoints/wps_frodo.txt] </rosparam>
+			<rosparam param="inspection_waypoints_path" subst_value="true"> [$(find mission_planner)/waypoints/wps_bilbo.txt, $(find mission_planner)/waypoints/wps_frodo.txt, $(find mission_planner)/waypoints/wps_gollum.txt] </rosparam>
 
 			<!-- Guidance parameters -->
 			<param name="takeoff_height" value="0.75"/> <!-- Takeoff height (in meters) -->

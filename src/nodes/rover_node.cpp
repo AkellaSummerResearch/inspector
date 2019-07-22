@@ -11,10 +11,10 @@ int main(int argc, char **argv) {
 	ros::init(argc, argv, "mission_node");
 	ros::NodeHandle node("~");
 	
-	ROS_WARN("Starting Drones");
-	inspector::InspectorClass mission_obj;
-	mission_obj.Mission(&node);
-/*
+	// ROS_WARN("Starting Drones");
+	// inspector::InspectorClass mission_obj;
+	// mission_obj.Mission(&node);
+
 	ROS_WARN("Starting Gollum");
 
     // Gollum path planning example ----------------------------------------------------------
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 
 	ros::Duration(1.0).sleep();
 	rover.AddWaypoints2Buffer(wps, init_vel, final_vel, max_velocity, max_acc, "traj", &final_wp);
-*/
+
 	//rover.ReturnWhenIdle();
 	//ROS_INFO("Rover is idle");
 

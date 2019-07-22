@@ -1,0 +1,10 @@
+<launch>
+
+<include file="$(find mission_planner)/launch/gollum.launch"> 
+    </include>
+
+    <include file="$(find mission_planner)/launch/swarm_inspection.launch"> 
+    </include>
+
+
+</launch>

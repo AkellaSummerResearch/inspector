@@ -109,8 +109,10 @@ void InspectorClass::Mission(ros::NodeHandle *nh) {
 
     // Load inspection files, transforming data into vicon frame
     // inspection_waypoint_list_.resize(ns_.size());
+    
     for (uint i = 0; i < ns_.size(); i++) {
         std::vector<mission_planner::xyz_heading> drone_inspection_list;
+        ROS_WARN("Number of namespaces: %d",i);
         if(LoadWaypoints(inspection_files[i], rel_pose, &drone_inspection_list) == 0) {
             return;
         } else {
@@ -143,6 +145,7 @@ void InspectorClass::Mission(ros::NodeHandle *nh) {
         waypoints.push_back(final_waypoint[i]);
         waypoints.push_back(inspection_waypoint_list_[i][0]);
         std::string name = ns_[i] + "/go_to_first_wp";
+        ROS_INFO("Name: %s",name.c_str());
         mission_[i]->AddWaypoints2Buffer(waypoints, init_vel, final_vel, max_vel, max_acc, sampling_time, name, &final_waypoint[i]);
     }
     

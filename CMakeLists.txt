@@ -100,3 +100,20 @@ target_link_libraries(collision_avoidance_example ${catkin_LIBRARIES})
 add_dependencies(collision_avoidance_example mavros_msgs_generate_messages_cpp mg_msgs_gencpp
                  mapper_gencpp mav_trajectory_generation_ros_gencpp ${catkin_EXPORTED_TARGETS}
                  ${mg_msgs_EXPORTED_TARGETS})
+
+# Gollum inspection node
+add_executable(rover_inspection 
+               src/nodes/rover_node.cpp
+               src/vicon_swarm_inspection.cpp
+               src/mission_class.cpp
+               src/drone_threads.cpp
+               src/rover_mission_class.cpp
+               src/rover_threads.cpp
+               src/helper.cpp
+               src/callbacks.cpp
+               src/polynomials.cpp
+               src/visualization_functions.cpp)
+target_link_libraries(rover_inspection ${catkin_LIBRARIES})
+add_dependencies(vicon_swarm_inspection mavros_msgs_generate_messages_cpp mg_msgs_gencpp
+                 mapper_gencpp mav_trajectory_generation_ros_gencpp ${catkin_EXPORTED_TARGETS}
+                 ${mg_msgs_EXPORTED_TARGETS})
