@@ -1,7 +1,7 @@
 <launch>
 
 	<arg name="namespace" default="PlanningExample"/>
-	<arg name="namespace1" default="Frodo"/>
+	<arg name="namespace1" default="Sauron"/>
 
     <group ns="$(arg namespace)">
 
@@ -38,5 +38,12 @@
     <group ns="$(arg namespace1)">
     	<node pkg="mav_trajectory_generation_ros" type="minSnap_Node" name="minSnap_Node" output="screen"/> 
     </group>
+
+    <include file="$(find mapper)/launch/mapper.launch">
+		<arg name="namespace" value="$(arg namespace1)" />
+		<arg name="launch_rviz" value="false" />
+		<arg name="process_pcl_at_startup" value="false" />
+		<arg name="inertial_frame_id" default="/slam" />
+	</include>
 
 </launch>

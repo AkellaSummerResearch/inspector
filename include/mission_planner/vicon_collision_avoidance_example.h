@@ -66,6 +66,12 @@ class InspectorClass {
   // Method for publishing tf transform between vicon and slam frames
   void RelTfPubTask(const geometry_msgs::Pose &pose);
 
+  // Call service to start relative pose estimation
+  bool StartRelPoseEstimator(geometry_msgs::Pose *rel_pose);
+
+  // Call service to load octomap
+  void LoadOctomap();
+
  private:
 
   // Namespace of the current node
@@ -80,6 +86,7 @@ class InspectorClass {
   // Relative pose between vicon frame and slam frame
   geometry_msgs::Pose relative_pose_;
   ros::ServiceClient rel_pose_client_, triangulation_start_client_, triangulation_stop_client_;
+  ros::ServiceClient load_octomap_client_;
 
   // nodehandle
   ros::NodeHandle nh_;

@@ -1,6 +1,8 @@
 <launch>
 
-	<arg name="namespace" default="Frodo"/>
+	<arg name="namespace" default="Sauron"/>
+	<arg name="rviz_cfg"  default="-d $(find px4_control)/Extras/$(arg namespace)Inspection.rviz" />
+    <arg name="launch_rviz" default="true" />
 
     <group ns="$(arg namespace)">
 
@@ -11,7 +13,7 @@
 	    	<param name="namespace" value="$(arg namespace)"/>
 
 			<!-- Paths for waypoint files -->
-			<param name="inspection_waypoints_path" value="$(find mission_planner)/waypoints/wps.txt"/>
+			<param name="inspection_waypoints_path" value="$(find mission_planner)/waypoints/wps_r200.txt"/>
 
 			<!-- Guidance parameters -->
 			<param name="takeoff_height" value="0.75"/> <!-- Takeoff height (in meters) -->
@@ -19,6 +21,9 @@
 
 			<!-- Thread update rates (in Hz) -->
 			<param name="tf_update_rate" value="100"/>
+
+			<!-- Whether or not to save octomap -->
+			<param name="save_octomap" value="true"/>
 		</node>
 
 		<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -36,12 +41,22 @@
 	    <arg name="namespace" value="$(arg namespace)" />
     </include>
 
+    <!-- Mapper node -->
+    <include file="$(find mapper)/launch/mapper.launch">
+		<arg name="namespace" value="$(arg namespace)" />
+		<arg name="launch_rviz" value="false" />
+		<arg name="process_pcl_at_startup" value="false" />
+		<arg name="inertial_frame_id" default="/slam" />
+	</include>
+
     <!-- <include file="$(find mapper)/launch/mapper_ns.launch">
 		<arg name="namespace" value="$(arg namespace)" />
 	</include> -->
 
-	<!-- <include file="$(find simulations_ros)/launch/localization.launch">  -->
-		<!-- <arg name="namespace" value="$(arg namespace)" /> -->
-	<!-- </include> -->
+    <!-- Launch RVIZ -->
+    <!-- <group if="$(arg launch_rviz)">
+        <node pkg="rviz" type="rviz" name="rviz" args="$(arg rviz_cfg)"/>
+    </group> -->
+
 
 </launch>

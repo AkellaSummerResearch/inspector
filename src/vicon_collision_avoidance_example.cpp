@@ -57,27 +57,22 @@ void InspectorClass::Mission(ros::NodeHandle *nh) {
     ROS_INFO("[mission_node] Quad is idle!"); 
 
     // Start service for finding relative pose between SLAM and vicon frames
-    std::string rel_pose_srv_name = "/batch_solver/start_new_batch";
-    rel_pose_client_ = nh_.serviceClient<mg_msgs::RequestRelativePoseBatch>(rel_pose_srv_name);
-    mg_msgs::RequestRelativePoseBatch client_msg;
-    client_msg.request.data = 30;
-    ROS_INFO("Calling service '%s' for batch solution!", rel_pose_client_.getService().c_str());
-    if (rel_pose_client_.call(client_msg)) {
-        ROS_INFO("[mission_node] Relative pose returned successfully!");
-        this->SetRelPoseVariables(client_msg.response.pose);
-    } else {
-        ROS_WARN("[mission_node] Error calling relative pose server. Aborting!");
+    geometry_msgs::Pose rel_pose;
+    if (!this->StartRelPoseEstimator(&rel_pose)) {
         return;
     }
 
     // Create thread that publishes relative tf between vicon and slam frames
     ROS_INFO("[mission_node] Publishing relative pose between vicon and slam frames!");
-    geometry_msgs::Pose rel_pose = client_msg.response.pose;
     rel_tf_pub_thread_ = std::thread(&InspectorClass::RelTfPubTask, this, rel_pose);
+
+    // Load octomap in slam frame
+    this->LoadOctomap();
 
     // Plan to go to desired waypoint
     Eigen::Vector3d des_point = this->Slam2Vicon(Eigen::Vector3d(1.75, 0.3, 0.20));
-    std::string service_name = "/Mapper/mapper_node/rrg";
+    // std::cout << des_point.transpose() << std::endl;
+    std::string service_name = "/" + ns_ + "/mapper_node/rrg";
     ros::ServiceClient client = nh->serviceClient<mapper::RRT_RRG_PRM>(service_name);
     
     if(!client.waitForExistence(ros::Duration(1.0))) {
@@ -85,13 +80,13 @@ void InspectorClass::Mission(ros::NodeHandle *nh) {
     }
 
     mapper::RRT_RRG_PRM path_plan_msg;
-    path_plan_msg.request.max_time = 0.1;
+    path_plan_msg.request.max_time = 0.5;
     path_plan_msg.request.max_nodes = 4000;
     path_plan_msg.request.steer_param = 0.25;
     path_plan_msg.request.free_space_only = false;
     path_plan_msg.request.origin = origin.GetXYZ();
     path_plan_msg.request.destination = helper::eigenvec2rospoint(des_point);
-    path_plan_msg.request.box_min = helper::set_rospoint(-5, -3, 0.5);
+    path_plan_msg.request.box_min = helper::set_rospoint(-5, -3, -0.1);
     path_plan_msg.request.box_max = helper::set_rospoint( 5,  3, 1.2);
     path_plan_msg.request.prune_result = true;
     path_plan_msg.request.publish_rviz = true;
@@ -109,10 +104,11 @@ void InspectorClass::Mission(ros::NodeHandle *nh) {
     std::vector<mission_planner::xyz_heading> waypoint_list;
     for (uint i = 0; i < path_plan_msg.response.path.size(); i++) {
         Eigen::Vector3d pt = helper::rospoint2eigenvec(path_plan_msg.response.path[i]);
-        // std::cout << pt << std::endl;
+        std::cout << pt.transpose() << std::endl;
         waypoint_list.push_back(mission_planner::xyz_heading(pt, origin.yaw_));
     }
     std::cout << std::endl;
+    mission_.ReturnWhenIdle();
 
     // Publish inspection waypoint markers
     this->PublishWaypointMarkers(waypoint_list);
@@ -230,6 +226,36 @@ void InspectorClass::RelTfPubTask(const geometry_msgs::Pose &pose) {
     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "map", "slam"));
     loop_rate.sleep();
   }
+}
+
+bool InspectorClass::StartRelPoseEstimator(geometry_msgs::Pose *rel_pose) {
+    std::string rel_pose_srv_name = "/batch_solver/start_new_batch";
+    rel_pose_client_ = nh_.serviceClient<mg_msgs::RequestRelativePoseBatch>(rel_pose_srv_name);
+    mg_msgs::RequestRelativePoseBatch client_msg;
+    client_msg.request.data = 50;
+    ROS_INFO("Calling service '%s' for batch solution!", rel_pose_client_.getService().c_str());
+    if (rel_pose_client_.call(client_msg)) {
+        ROS_INFO("[mission_node] Relative pose returned successfully!");
+        *rel_pose = client_msg.response.pose;
+        this->SetRelPoseVariables(client_msg.response.pose);
+        return true;
+    } else {
+        ROS_WARN("[mission_node] Error calling relative pose server. Aborting!");
+        return false;
+    }
+}
+
+void InspectorClass::LoadOctomap() {
+    std::string load_octomap_srv_name = "/" + ns_ + "/mapper_node/load_map";
+    load_octomap_client_ = nh_.serviceClient<std_srvs::Trigger>(load_octomap_srv_name);
+    std_srvs::Trigger client_msg;
+    ROS_INFO("Calling service '%s' for starting octomap!", load_octomap_client_.getService().c_str());
+    if (load_octomap_client_.call(client_msg)) {
+        ROS_INFO("[mission_node] Start Octomap returned successfully!");
+    } else {
+        ROS_WARN("[mission_node] Error calling Start Octomap");
+        return;
+    }
 }
 
 } // inspector

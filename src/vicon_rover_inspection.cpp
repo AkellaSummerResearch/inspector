@@ -26,6 +26,10 @@ void InspectorClass::Mission(ros::NodeHandle *nh) {
     nh_.getParam("localization_waypoints_path", localization_file);
     nh_.getParam("inspection_waypoints_path", inspection_file);
 
+    // Boolean for saving the octomap or not
+    bool save_octomap;
+    nh_.getParam("save_octomap", save_octomap);
+
     // Start the Mission Planner Engine
     ROS_INFO("[mission_node] Starting Mission Planner Engine!");    
     mission_.Initialize(ns_, tf_update_rate, max_velocity_);
@@ -62,36 +66,20 @@ void InspectorClass::Mission(ros::NodeHandle *nh) {
     ROS_INFO("[mission_node] Quad is idle!");
 
     // Start service for collecting yolo data for triangulation
-    std::string start_triangulation_srv_name = "/triangulation/collect_yolo_data";
-    triangulation_start_client_ = nh_.serviceClient<mg_msgs::set_strings>(start_triangulation_srv_name);
-    mg_msgs::set_strings yolo_client_msg;
-    yolo_client_msg.request.strings.push_back("like_a_boss");
-    yolo_client_msg.request.strings.push_back("surprised");
-    ROS_INFO("Calling service '%s' for batch solution!", triangulation_start_client_.getService().c_str());
-    if (triangulation_start_client_.call(yolo_client_msg)) {
-        ROS_INFO("[mission_node] Triangulation service returned successfully!");
-    } else {
-        ROS_WARN("[mission_node] Error calling triangulation service. Aborting!");
-        return;
-    }   
+    this->StartTriangulation();
 
     // Start service for finding relative pose between SLAM and vicon frames
-    std::string rel_pose_srv_name = "/batch_solver/start_new_batch";
-    rel_pose_client_ = nh_.serviceClient<mg_msgs::RequestRelativePoseBatch>(rel_pose_srv_name);
-    mg_msgs::RequestRelativePoseBatch client_msg;
-    client_msg.request.data = 50;
-    ROS_INFO("Calling service '%s' for batch solution!", rel_pose_client_.getService().c_str());
-    if (rel_pose_client_.call(client_msg)) {
-        ROS_INFO("[mission_node] Relative pose returned successfully!");
-    } else {
-        ROS_WARN("[mission_node] Error calling relative pose server. Aborting!");
+    geometry_msgs::Pose rel_pose;
+    if (!this->StartRelPoseEstimator(&rel_pose)) {
         return;
     }
 
     // Create thread that publishes relative tf between vicon and slam frames
     ROS_INFO("[mission_node] Publishing relative pose between vicon and slam frames!");
-    geometry_msgs::Pose rel_pose = client_msg.response.pose;
     rel_tf_pub_thread_ = std::thread(&InspectorClass::RelTfPubTask, this, rel_pose);
+
+    // Start running the octomap
+    this->StartOctomap();
 
     // Load inspection file, transforming data into vicon frame
     if(LoadWaypoints(inspection_file, rel_pose, &inspection_waypoint_list_) == 0) {
@@ -128,12 +116,14 @@ void InspectorClass::Mission(ros::NodeHandle *nh) {
         }
         mission_.AddWaypoints2Buffer(waypoints, init_vel, final_vel, max_vel, max_acc, sampling_time, &final_waypoint);
     }
+    mission_.ReturnWhenIdle();
 
     // Go to origin
     waypoints.clear();
     waypoints.push_back(final_waypoint);
     waypoints.push_back(mission_planner::xyz_heading(origin.x_, origin.y_, final_waypoint.z_, origin.yaw_));
     mission_.AddWaypoints2Buffer(waypoints, init_vel, final_vel, max_vel, max_acc, sampling_time, &final_waypoint);
+    mission_.ReturnWhenIdle();
 
     // Land
     waypoints.clear();
@@ -146,17 +136,21 @@ void InspectorClass::Mission(ros::NodeHandle *nh) {
     mission_.ReturnWhenIdle();
     ROS_INFO("[mission_node] Quad is idle!");
 
-    // Stop service for collecting yolo data for triangulation: solve triangulation
-    std::string stop_triangulation_srv_name = "/triangulation/stop_collecting_yolo_data";
-    triangulation_stop_client_ = nh_.serviceClient<std_srvs::Trigger>(stop_triangulation_srv_name);
-    std_srvs::Trigger triangulation_client_msg;
-    ROS_INFO("Calling service '%s' for batch solution!", triangulation_stop_client_.getService().c_str());
-    if (triangulation_stop_client_.call(triangulation_client_msg)) {
-        ROS_INFO("[mission_node] Triangulation service solved successfully!");
-    } else {
-        ROS_WARN("[mission_node] Error calling triangulation service. Aborting!");
-        return;
-    }  
+    if (save_octomap) {
+        this->SaveOctomap();
+    }
+
+    // // Stop service for collecting yolo data for triangulation: solve triangulation
+    // std::string stop_triangulation_srv_name = "/triangulation/stop_collecting_yolo_data";
+    // triangulation_stop_client_ = nh_.serviceClient<std_srvs::Trigger>(stop_triangulation_srv_name);
+    // std_srvs::Trigger triangulation_client_msg;
+    // ROS_INFO("Calling service '%s' for batch solution!", triangulation_stop_client_.getService().c_str());
+    // if (triangulation_stop_client_.call(triangulation_client_msg)) {
+    //     ROS_INFO("[mission_node] Triangulation service solved successfully!");
+    // } else {
+    //     ROS_WARN("[mission_node] Error calling triangulation service. Aborting!");
+    //     return;
+    // }
 
     // Disarm quad
     // mission_.DisarmQuad(ns_, nh);
@@ -174,7 +168,7 @@ bool InspectorClass::LoadWaypoints(const std::string &filename,
     Eigen::Matrix3d rot = rel_att.toRotationMatrix();
     Eigen::Vector3d rpy = helper::quat2rpy(rel_pose.orientation);
     float rel_yaw = rpy(2);
-    float camera_to_base_link = 0.1;  // Camera is 10cm ahead of the base link in vicon
+    // float camera_to_base_link = 0.0;  // Camera is 10cm ahead of the base link in vicon
     // init_pose.getBasis().getRPY(init_roll, init_pitch, init_yaw);
     // ROS_INFO("Init yaw: %f", init_yaw);
 
@@ -184,7 +178,7 @@ bool InspectorClass::LoadWaypoints(const std::string &filename,
         while( myfile >> x >> y >> z >> yaw) {
             const Eigen::Vector3d pos_slam(x, y, z);
             Eigen::Vector3d pos_vicon = rel_pos + rot*pos_slam;
-            pos_vicon = pos_vicon - camera_to_base_link*Eigen::Vector3d(cos(rel_yaw + yaw), sin(rel_yaw + yaw), 0.0);
+            // pos_vicon = pos_vicon - camera_to_base_link*Eigen::Vector3d(cos(rel_yaw + yaw), sin(rel_yaw + yaw), 0.0);
             waypoint_list->push_back(mission_planner::xyz_heading(pos_vicon, rel_yaw + yaw));
             // std::cout << x << " " << y << " " << z << " " << init_yaw-yaw << std::endl;
         }
@@ -240,6 +234,64 @@ void InspectorClass::RelTfPubTask(const geometry_msgs::Pose &pose) {
     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "map", "slam"));
     loop_rate.sleep();
   }
+}
+
+void InspectorClass::StartTriangulation() {
+    std::string start_triangulation_srv_name = "/triangulation/collect_yolo_data";
+    triangulation_start_client_ = nh_.serviceClient<mg_msgs::set_strings>(start_triangulation_srv_name);
+    mg_msgs::set_strings yolo_client_msg;
+    yolo_client_msg.request.strings.push_back("like_a_boss");
+    yolo_client_msg.request.strings.push_back("surprised");
+    ROS_INFO("Calling service '%s' for batch solution!", triangulation_start_client_.getService().c_str());
+    if (triangulation_start_client_.call(yolo_client_msg)) {
+        ROS_INFO("[mission_node] Triangulation service returned successfully!");
+    } else {
+        ROS_WARN("[mission_node] Error calling triangulation service. Aborting!");
+        return;
+    }
+}
+
+bool InspectorClass::StartRelPoseEstimator(geometry_msgs::Pose *rel_pose) {
+    std::string rel_pose_srv_name = "/batch_solver/start_new_batch";
+    rel_pose_client_ = nh_.serviceClient<mg_msgs::RequestRelativePoseBatch>(rel_pose_srv_name);
+    mg_msgs::RequestRelativePoseBatch client_msg;
+    client_msg.request.data = 50;
+    ROS_INFO("Calling service '%s' for batch solution!", rel_pose_client_.getService().c_str());
+    if (rel_pose_client_.call(client_msg)) {
+        ROS_INFO("[mission_node] Relative pose returned successfully!");
+        *rel_pose = client_msg.response.pose;
+        return true;
+    } else {
+        ROS_WARN("[mission_node] Error calling relative pose server. Aborting!");
+        return false;
+    }
+}
+
+void InspectorClass::StartOctomap() {
+    std::string start_octomap_srv_name = "/" + ns_ + "/mapper_node/process_pcl";
+    start_octomap_client_ = nh_.serviceClient<std_srvs::SetBool>(start_octomap_srv_name);
+    std_srvs::SetBool client_msg;
+    client_msg.request.data = true;
+    ROS_INFO("Calling service '%s' for starting octomap!", start_octomap_client_.getService().c_str());
+    if (start_octomap_client_.call(client_msg)) {
+        ROS_INFO("[mission_node] Start Octomap returned successfully!");
+    } else {
+        ROS_WARN("[mission_node] Error calling Start Octomap");
+        return;
+    }
+}
+
+void InspectorClass::SaveOctomap() {
+    std::string save_octomap_srv_name = "/" + ns_ + "/mapper_node/save_map";
+    save_octomap_client_ = nh_.serviceClient<std_srvs::Trigger>(save_octomap_srv_name);
+    std_srvs::Trigger client_msg;
+    ROS_INFO("Calling service '%s' for saving octomap!", save_octomap_client_.getService().c_str());
+    if (save_octomap_client_.call(client_msg)) {
+        ROS_INFO("[mission_node] Save Octomap returned successfully!");
+    } else {
+        ROS_WARN("[mission_node] Error calling Save Octomap");
+        return;
+    }
 }
 
 } // inspector

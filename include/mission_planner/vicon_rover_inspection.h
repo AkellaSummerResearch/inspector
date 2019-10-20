@@ -17,6 +17,7 @@
 #include <mg_msgs/RequestRelativePoseBatch.h>
 #include <mg_msgs/set_strings.h>
 #include <std_srvs/Trigger.h>
+#include <std_srvs/SetBool.h>
 
 // Miscellaneous libraries
 #include "mission_planner/helper.h"
@@ -55,6 +56,18 @@ class InspectorClass {
   // Method for publishing tf transform between vicon and slam frames
   void RelTfPubTask(const geometry_msgs::Pose &pose);
 
+  // Call service to start triangulation
+  void StartTriangulation();
+
+  // Call service to start relative pose estimation
+  bool StartRelPoseEstimator(geometry_msgs::Pose *rel_pose);
+
+  // Call service to start octomap
+  void StartOctomap();
+
+  // Calls service to save octomap
+  void SaveOctomap();
+
  private:
 
   // Namespace of the current node
@@ -72,6 +85,7 @@ class InspectorClass {
   // Relative pose between vicon frame and slam frame
   geometry_msgs::Pose relative_pose_;
   ros::ServiceClient rel_pose_client_, triangulation_start_client_, triangulation_stop_client_;
+  ros::ServiceClient start_octomap_client_, save_octomap_client_;
 
   // nodehandle
   ros::NodeHandle nh_;
