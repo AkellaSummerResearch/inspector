@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   mg_msgs
   px4_control
   mav_trajectory_generation_ros
+  p4_ros
   mapper
 )
 
@@ -69,6 +70,20 @@ add_dependencies(vicon_rover_inspection mavros_msgs_generate_messages_cpp mg_msg
                  mapper_gencpp mav_trajectory_generation_ros_gencpp ${catkin_EXPORTED_TARGETS}
                  ${mg_msgs_EXPORTED_TARGETS})
 
+# Mapper inspection node
+add_executable(mapper_inspection 
+               src/nodes/mapper_node.cpp
+               src/mapper_inspection_class.cpp
+               src/mission_class.cpp
+               src/drone_threads.cpp
+               src/helper.cpp
+               src/callbacks.cpp
+               src/visualization_functions.cpp)
+target_link_libraries(mapper_inspection ${catkin_LIBRARIES})
+add_dependencies(mapper_inspection mavros_msgs_generate_messages_cpp mg_msgs_gencpp
+                 mapper_gencpp mav_trajectory_generation_ros_gencpp ${catkin_EXPORTED_TARGETS}
+                 ${mg_msgs_EXPORTED_TARGETS})
+
 # Swarm inspection node
 add_executable(vicon_swarm_inspection 
                src/nodes/swarm_mission_node.cpp
@@ -86,17 +101,31 @@ add_dependencies(vicon_swarm_inspection mavros_msgs_generate_messages_cpp mg_msg
                  mapper_gencpp mav_trajectory_generation_ros_gencpp ${catkin_EXPORTED_TARGETS}
                  ${mg_msgs_EXPORTED_TARGETS})
 
-# Collision Avoidance node
-add_executable(collision_avoidance_example 
-               src/nodes/collision_avoidance_node.cpp
-               src/vicon_collision_avoidance_example.cpp
+# Collision Avoidance nodes
+add_executable(collision_avoidance_fixed_map 
+               src/nodes/collision_avoidance_fixed_map_node.cpp
+               src/collision_avoidance_fixed_map.cpp
                src/mission_class.cpp
                src/drone_threads.cpp
                src/helper.cpp
                src/callbacks.cpp
                src/polynomials.cpp
                src/visualization_functions.cpp)
-target_link_libraries(collision_avoidance_example ${catkin_LIBRARIES})
-add_dependencies(collision_avoidance_example mavros_msgs_generate_messages_cpp mg_msgs_gencpp
+target_link_libraries(collision_avoidance_fixed_map ${catkin_LIBRARIES})
+add_dependencies(collision_avoidance_fixed_map mavros_msgs_generate_messages_cpp mg_msgs_gencpp
+                 mapper_gencpp mav_trajectory_generation_ros_gencpp ${catkin_EXPORTED_TARGETS}
+                 ${mg_msgs_EXPORTED_TARGETS})
+
+add_executable(collision_avoidance
+               src/nodes/collision_avoidance_node.cpp
+               src/collision_avoidance.cpp
+               src/mission_class.cpp
+               src/drone_threads.cpp
+               src/helper.cpp
+               src/callbacks.cpp
+               src/polynomials.cpp
+               src/visualization_functions.cpp)
+target_link_libraries(collision_avoidance ${catkin_LIBRARIES})
+add_dependencies(collision_avoidance mavros_msgs_generate_messages_cpp mg_msgs_gencpp
                  mapper_gencpp mav_trajectory_generation_ros_gencpp ${catkin_EXPORTED_TARGETS}
                  ${mg_msgs_EXPORTED_TARGETS})

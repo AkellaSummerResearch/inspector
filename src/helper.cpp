@@ -155,5 +155,25 @@ std::vector<std::pair<uint, uint>> split_waypoints(const uint &n_waypoints,
 	return first_last_wp_index;
 }
 
+mg_msgs::PVAJS_array min_time_to_flat_states(const std::vector<p4_ros::PVA> &pva,
+	                                         const double &yaw) {
+	mg_msgs::PVAJS_array flat_states;
+	mg_msgs::PVAJS flat_state;
+
+	for (uint i = 0; i < pva.size(); i++) {
+		flat_state.Pos = pva[i].pos;
+		flat_state.Vel = pva[i].vel;
+		flat_state.Acc = pva[i].acc;
+		flat_state.Jerk = setvector3(0.0, 0.0, 0.0);
+		flat_state.Snap = setvector3(0.0, 0.0, 0.0);
+		flat_state.yaw = 0.0;
+		flat_state.yaw_dot = 0.0;
+		flat_state.yaw_ddot = 0.0;
+		flat_state.time = pva[i].time;
+		flat_states.PVAJS_array.push_back(flat_state);
+	}
+
+	return flat_states;
+}
 
 }  // namespace helper

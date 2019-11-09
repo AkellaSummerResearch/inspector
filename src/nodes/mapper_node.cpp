@@ -2,7 +2,7 @@
 
 // Standard includes
 #include <ros/ros.h>
-#include <mission_planner/collision_avoidance.h>
+#include <mission_planner/mapper_inspection_class.h>
 
 int main(int argc, char **argv) {
 
@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
 
 	ros::init(argc, argv, "mission_node");
 	ros::NodeHandle node("~");
-
+	
 	inspector::InspectorClass mission_obj;
 	mission_obj.Mission(&node);
 

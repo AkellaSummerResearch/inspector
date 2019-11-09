@@ -67,6 +67,14 @@ class MissionClass {
                                        const Eigen::Vector3d &final_vel, const double &max_vel, const double &max_acc,
                                        const double &sampling_time, const std::string &traj_name, xyz_heading *final_waypoint);
 
+  // Helper function for adding planned trajectories to the buffer
+  void AddTrajectoryToBuffer(const mission_planner::TrajectoryActionInputs &traj_inputs);
+
+  // Add to buffer for rviz publishing
+  void AddToRvizBuffer(const std::vector<xyz_heading> &xyz_heading_array,
+                       const mg_msgs::PVAJS_array &flatStates,
+                       const std::string &traj_name = "");
+
   // Add disarm command to buffer (quad disarms after finishes all other previous commands)
   void AddDisarm2Buffer();
 

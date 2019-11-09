@@ -1,7 +1,7 @@
 
 
-#ifndef VICON_COLLISION_AVOIDANCE_EXAMPLE_CLASS_H_
-#define VICON_COLLISION_AVOIDANCE_EXAMPLE_CLASS_H_
+#ifndef COLLISION_AVOIDANCE_FIXED_MAP_CLASS_H_
+#define COLLISION_AVOIDANCE_FIXED_MAP_CLASS_H_
 
 // Ros libraries
 #include <ros/ros.h>
@@ -108,4 +108,4 @@ class InspectorClass {
 
 }  // namespace inspector
 
-#endif  // VICON_COLLISION_AVOIDANCE_EXAMPLE_CLASS_H_
+#endif  // COLLISION_AVOIDANCE_FIXED_MAP_CLASS_H_

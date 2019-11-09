@@ -9,6 +9,9 @@
 #include <Eigen/Dense>
 #include "mg_msgs/PVAJ_request.h"
 #include "mg_msgs/PVA_request.h"
+#include "mg_msgs/PVAJS_array.h"
+#include "mg_msgs/PVAJS.h"
+#include "p4_ros/PVA.h"
 
 #include <cmath>
 
@@ -58,6 +61,9 @@ mg_msgs::PVA_request get_empty_PVA();
 
 std::vector<std::pair<uint, uint>> split_waypoints(const uint &n_waypoints,
 	                                               const uint &wp_per_segment);
+
+mg_msgs::PVAJS_array min_time_to_flat_states(const std::vector<p4_ros::PVA> &pva,
+	                                         const double &yaw);
 
 }  // namespace helper
 

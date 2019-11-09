@@ -2,7 +2,7 @@
 
 // Standard includes
 #include <ros/ros.h>
-#include <mission_planner/collision_avoidance.h>
+#include <mission_planner/collision_avoidance_fixed_map.h>
 
 int main(int argc, char **argv) {
 

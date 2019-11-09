@@ -137,6 +137,7 @@ void MissionClass::TrajectoryActionCaller(const std::string &ns) {
         mutexes_.quad_is_busy.lock();
             globals_.quad_is_busy = action_server_busy;
         mutexes_.quad_is_busy.unlock();
+        // std::cout << "Server status: " << action_server_busy << std::endl;
 
         if(traj_inputs.size() > 0) {
         	// Retrieve first item in the buffer
@@ -148,6 +149,7 @@ void MissionClass::TrajectoryActionCaller(const std::string &ns) {
 
         // Send data to action server (start immediately or wait until server is no longer active)
         if (local_traj_inputs.start_immediately) {
+            ROS_WARN("Start immediately triggered!");
             // Start immediately is usually triggered when unsafe behaviour is detected
             followPVAJS_action_client.cancelAllGoals();
             this->CallActionType(ns, local_traj_inputs, wait_until_done, 
@@ -161,6 +163,10 @@ void MissionClass::TrajectoryActionCaller(const std::string &ns) {
                 // Start only when server is no longer busy (also removes new trajectory from buffer)
                 this->CallActionType(ns, local_traj_inputs, wait_until_done, 
                                  &nh, &followPVAJS_action_client);
+                // ROS_WARN("Action called!");
+
+                // Sleep to give time for the action to become active
+                ros::Duration(1.0).sleep();
             }
         }
 
