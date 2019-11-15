@@ -80,7 +80,7 @@ void InspectorClass::Mission(ros::NodeHandle *nh) {
     path_plan_msg.request.origin = final_waypoint.GetXYZ();
     path_plan_msg.request.destination = helper::eigenvec2rospoint(des_point);
     path_plan_msg.request.box_min = helper::set_rospoint(-5, -3, 0.3);
-    path_plan_msg.request.box_max = helper::set_rospoint( 5,  3, 1.2);
+    path_plan_msg.request.box_max = helper::set_rospoint( 5,  3, 1.5);
     path_plan_msg.request.prune_result = true;
     path_plan_msg.request.publish_rviz = true;
     if (rrg_client.call(path_plan_msg)) {
