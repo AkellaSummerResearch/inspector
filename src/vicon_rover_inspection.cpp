@@ -79,7 +79,7 @@ void InspectorClass::Mission(ros::NodeHandle *nh) {
     rel_tf_pub_thread_ = std::thread(&InspectorClass::RelTfPubTask, this, rel_pose);
 
     // Start running the octomap
-    this->StartOctomap();
+    // this->StartOctomap();
 
     // Load inspection file, transforming data into vicon frame
     if(LoadWaypoints(inspection_file, rel_pose, &inspection_waypoint_list_) == 0) {
@@ -137,7 +137,7 @@ void InspectorClass::Mission(ros::NodeHandle *nh) {
     ROS_INFO("[mission_node] Quad is idle!");
 
     if (save_octomap) {
-        this->SaveOctomap();
+        // this->SaveOctomap();
     }
 
     // // Stop service for collecting yolo data for triangulation: solve triangulation
@@ -240,8 +240,9 @@ void InspectorClass::StartTriangulation() {
     std::string start_triangulation_srv_name = "/triangulation/collect_yolo_data";
     triangulation_start_client_ = nh_.serviceClient<mg_msgs::set_strings>(start_triangulation_srv_name);
     mg_msgs::set_strings yolo_client_msg;
-    yolo_client_msg.request.strings.push_back("like_a_boss");
-    yolo_client_msg.request.strings.push_back("surprised");
+    yolo_client_msg.request.strings.push_back("insignia");
+    yolo_client_msg.request.strings.push_back("danger");
+    yolo_client_msg.request.strings.push_back("fuel");
     ROS_INFO("Calling service '%s' for batch solution!", triangulation_start_client_.getService().c_str());
     if (triangulation_start_client_.call(yolo_client_msg)) {
         ROS_INFO("[mission_node] Triangulation service returned successfully!");

@@ -36,18 +36,23 @@
 	    <arg name="namespace" value="$(arg namespace)" />
     </include>
 
+    <!-- Neural network -->
+    <include file="$(find darknet_ros)/launch/symbols.launch"> 
+        <arg name="namespace" value="$(arg namespace)" />
+    </include>
+
     <!-- Triangulation node to find emoji locations -->
     <include file="$(find yolo_triangulation)/launch/triangulate.launch">
 	    <arg name="namespace" value="$(arg namespace)" />
     </include>
 
     <!-- Mapper node -->
-    <include file="$(find mapper)/launch/mapper.launch">
+    <!-- <include file="$(find mapper)/launch/mapper.launch">
 		<arg name="namespace" value="$(arg namespace)" />
 		<arg name="launch_rviz" value="false" />
 		<arg name="process_pcl_at_startup" value="false" />
 		<arg name="inertial_frame_id" default="/slam" />
-	</include>
+	</include> -->
 
     <!-- <include file="$(find mapper)/launch/mapper_ns.launch">
 		<arg name="namespace" value="$(arg namespace)" />
