@@ -115,8 +115,9 @@ void InspectorClass::Mission(ros::NodeHandle *nh) {
             waypoints.push_back(inspection_waypoint_list_[i]);
         }
         mission_.AddWaypoints2Buffer(waypoints, init_vel, final_vel, max_vel, max_acc, sampling_time, &final_waypoint);
+        mission_.ReturnWhenIdle();
     }
-    mission_.ReturnWhenIdle();
+    // mission_.ReturnWhenIdle();
 
     // Go to origin
     waypoints.clear();

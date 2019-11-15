@@ -1,0 +1,41 @@
+<launch>
+
+	<arg name="namespace" default="Sauron"/>
+	<arg name="rviz_cfg"  default="-d $(find px4_control)/Extras/$(arg namespace)Inspection.rviz" />
+    <arg name="launch_rviz" default="true" />
+
+    <group ns="$(arg namespace)">
+
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+	    <node pkg="mission_planner" type="mapper_inspection" name="mapping_node" output="screen">
+
+	    	<!-- Namespace -->
+	    	<param name="namespace" value="$(arg namespace)"/>
+
+			<!-- Thread update rates (in Hz) -->
+			<param name="tf_update_rate" value="100"/>
+
+			<!-- Whether or not to save octomap -->
+			<param name="save_octomap" value="true"/>
+		</node>
+
+		<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<!--     	<node pkg="mav_trajectory_generation_ros" type="minSnap_Node" name="minSnap_Node" output="screen"/>  -->
+
+    </group>
+
+	<!-- Batch solver to find relative pose between vicon and SLAM -->
+    <include file="$(find batch_pose_estimator)/launch/slam2vicon.launch">
+	    <arg name="namespace" value="$(arg namespace)" />
+    </include>
+
+    <!-- Mapper node -->
+    <include file="$(find mapper)/launch/mapper.launch">
+		<arg name="namespace" value="$(arg namespace)" />
+		<arg name="launch_rviz" value="false" />
+		<arg name="process_pcl_at_startup" value="false" />
+		<arg name="inertial_frame_id" default="/slam" />
+		<arg name="depth_cam_suffix" default="/camera/depth/compressed_points" />
+	</include>
+
+</launch>

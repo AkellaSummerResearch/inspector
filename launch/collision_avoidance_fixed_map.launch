@@ -6,7 +6,7 @@
     <group ns="$(arg namespace)">
 
         <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-	    <node pkg="mission_planner" type="collision_avoidance_example" name="inspector_node" output="screen">
+	    <node pkg="mission_planner" type="collision_avoidance_fixed_map" name="inspector_node" output="screen">
 
 	    	<!-- Namespace -->
 	    	<param name="namespace" value="$(arg namespace1)"/>

@@ -1,6 +1,6 @@
 
 
-#include <mission_planner/vicon_collision_avoidance_example.h>
+#include <mission_planner/collision_avoidance_fixed_map.h>
 
 // ---------------------------------------------------
 namespace inspector {

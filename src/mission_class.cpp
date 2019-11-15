@@ -102,6 +102,23 @@ void MissionClass::AddWaypoints2Buffer(const std::vector<xyz_heading> &waypoints
     *final_waypoint = waypoints[waypoints.size()-1];
 }
 
+void MissionClass::AddTrajectoryToBuffer(const mission_planner::TrajectoryActionInputs &traj_inputs) {
+
+    // Add to buffer of quad trajectories
+    mutexes_.trajectory_buffer.lock();
+        globals_.traj_inputs.push_back(traj_inputs);
+    mutexes_.trajectory_buffer.unlock();
+}
+
+void MissionClass::AddToRvizBuffer(const std::vector<xyz_heading> &xyz_heading_array,
+                                   const mg_msgs::PVAJS_array &flatStates,
+                                   const std::string &traj_name) {
+    // Add to list for Rviz publishing
+    mutexes_.wp_traj_buffer.lock();
+        globals_.wp_traj_list.push(mission_planner::waypoint_and_trajectory(xyz_heading_array, flatStates, traj_name));
+    mutexes_.wp_traj_buffer.unlock();
+}
+
 void MissionClass::AddDisarm2Buffer() {
     mutexes_.waypoint_buffer.lock();
         globals_.min_snap_inputs.push(minSnapWpInputs("Disarm"));
@@ -536,7 +553,7 @@ bool MissionClass::IsQuadIdle() {
         bool quad_is_busy = globals_.quad_is_busy;
     mutexes_.quad_is_busy.unlock();
 
-    // ROS_INFO("%d\t%d\t%d", (wp_buffer_size > 0), (traj_buffer_size > 0), quad_is_busy);
+    // ROS_INFO("%d\t%d\t%d", wp_buffer_size, traj_buffer_size, quad_is_busy);
 
     if ((wp_buffer_size > 0) || (traj_buffer_size > 0) || quad_is_busy) {
         return false;

@@ -1,0 +1,57 @@
+<launch>
+
+	<arg name="namespace" default="PlanningExample"/>
+	<arg name="namespace1" default="Sauron"/>
+
+    <group ns="$(arg namespace)">
+
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+	    <node pkg="mission_planner" type="collision_avoidance" name="inspector_node" output="screen">
+
+	    	<!-- Namespace -->
+	    	<param name="namespace" value="$(arg namespace1)"/>
+
+			<!-- Guidance parameters -->
+			<param name="takeoff_height" value="0.75"/> <!-- Takeoff height (in meters) -->
+			<param name="max_acceleration" value="0.15"/>   <!-- Maximum acceleration (in meters/sec^2) -->
+			<param name="max_velocity" value="0.15"/>   <!-- Maximum speed (in meters/sec) -->
+			<param name="max_yaw_vel" value="0.15"/>   <!-- Maximum yaw speed (in rad/sec) -->
+
+			<!-- Thread update rates (in Hz) -->
+			<param name="tf_update_rate" value="100"/>
+
+			<!-- Final waypoint -->
+			<rosparam param="final_waypoint"> [3.0, 0.0, 0.5] </rosparam>
+		</node>
+
+		<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    	<node pkg="mav_trajectory_generation_ros" type="minSnap_Node" name="minSnap_Node" output="screen"/> 
+
+    </group>
+
+	<!-- Batch solver to find relative pose between vicon and SLAM -->
+    <include file="$(find batch_pose_estimator)/launch/slam2vicon.launch">
+	    <arg name="namespace" value="$(arg namespace1)" />
+    </include>
+
+    <!-- Triangulation node to find emoji locations -->
+    <include file="$(find yolo_triangulation)/launch/triangulate.launch">
+	    <arg name="namespace" value="$(arg namespace1)" />
+    </include>
+
+    <!-- Min snap planner-->
+    <group ns="$(arg namespace1)">
+    	<node pkg="mav_trajectory_generation_ros" type="minSnap_Node" name="minSnap_Node" output="screen"/> 
+    </group>
+
+    <!-- Min time planner -->
+    <node pkg="p4_ros" type="p4_services" name="p4_services" output="screen" required = "true">  </node>
+
+    <include file="$(find mapper)/launch/mapper.launch">
+		<arg name="namespace" value="$(arg namespace1)" />
+		<arg name="launch_rviz" value="false" />
+		<arg name="process_pcl_at_startup" value="true" />
+		<arg name="inertial_frame_id" default="/map" />
+	</include>
+
+</launch>
